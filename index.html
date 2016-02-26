@@ -64,81 +64,6 @@
       <div class="outer">
         <section id="main">
   
-    <article id="post-Android 5.0分析" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/02/26/Android 5.0分析/" class="article-date">
-  <time datetime="2016-02-26T13:30:21.066Z" itemprop="datePublished">2016-02-26</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <hr>
-<p>title: Android 5.0分析</p>
-<p>1.首先设置targetSdkVersion为21<br>必须设置吗？是的，之前没设置会出现闪退的情况</p>
-<ol>
-<li>如果想兼容以前的版本的话，只能通过API Level来进行判断， minSdkVersion这个属性不起作用</li>
-<li>关注一下JNI，用工具自动生成的不标准的代码，ART不支持压缩垃圾回收；这些可能兼容性有问题。</li>
-<li>Notification有些改变，包括风格、颜色、声音、震动，现在可以设置优先级，可以把它放到锁屏上面，多媒体回放，可以在当前应用弹出警告框。</li>
-<li>RemoteControlClient的修改，该类已经被弃用了，用MediaSession进行替换。</li>
-<li>用getAppTasks()代替getRecentTasks()</li>
-<li>支持64位系统，NDK相关：下载安装NDK Revision 10c 支持OpenGL ES (GLES) 3.1。</li>
-<li>bind或start一个service的时候需要指定一个明确的Intent，但不要声明Intent filter。</li>
-<li>Material Design支持</li>
-<li>可以控制多个task的显示和处理</li>
-<li>更新了webview，更加安全、稳定，可以给Webview赋一些权限：访问照相机，麦克风等，对选择文件进行了增强。</li>
-<li>增加了屏幕捕获和分享功能。</li>
-<li>有关notification的更新：可以在锁屏界面进行显示（这个是可以配置的）。可以借助metadata来对notification进行分类。</li>
-<li>openGL ES升级为3.1，增加java接口和native支持。</li>
-<li>Android5.0采用新的camera API android.hardware.camera2</li>
-<li>有关音频、视频回放的增强，用MediaSession 替换之前的RemoteControlClient。通过暴露一种服务让其他的应用读取本客户端的多媒体内容库。</li>
-<li>目录选择的修改，提供专门的类来处理文档和目录的创建、修改和删除。</li>
-<li>Android5.0可以进行网络选择？？？ 这个是指app可以自主选择连接的网路</li>
-<li>查看应用耗电量工具</li>
-<li>Screen pinning，临时的只显示一个Task</li>
-<li>获取手机的应用信息（包括：应用最后使用时间，应用在前台的使用时长等）。</li>
-<li>输入语言的切换</li>
-<li>pdf转换成bitmap</li>
-<li>Divice owner的使用<br>25.输入语言的切换<br>26.添加了一个Scheduling jobs，可以自己定义开始时间，比如设备在充电的时候，或者空闲的时候等。<br>27.蓝牙和NFC的改善。</li>
-</ol>
-<p>额外：<br>多document显示<br>还有Device admin加入了workspace的控制</p>
-<p>以上只是看文档，并没有深入的去实践。</p>
-<p>对EMM的影响：</p>
-<ol>
-<li>同样的客户端在10010平台上可以登录成功，但在test平台上却登录失败。这个问题已经解决，server SSL配置问题</li>
-<li>在启动SchemeLocationService时只启动了Action为Constants. COM_POLYSAAS_MDM_SERVICE_SCHEME_LOCATION_SERVICE。原因在#8</li>
-<li>文档下载有问题 什么问题 就是下载不了</li>
-<li>英文版的EMM界面显示有问题 什么问题 有的字太多，显示的不太好看</li>
-<li>应用黑名单不起作用 原因是什么？是否受#8影响 目前还不知道，研究一下再告诉你</li>
-<li>本地应用现在不起作用 什么本地应用？不起作用是什么意思？ 就是策略里的本地应用，比如：浏览器等，禁用后还是可以打开。</li>
-</ol>
-<p>对应用产生的影响：<br>自定义权限的修改:<br>在Android L上，对于自定义权限有了新的限定，如果是不同应用声明使用了相同的自定义权限,那么就需要使用相同的签名，否则无法安装或者安装时需要进行删除应用间关联。<br>这应该是google为了防止应用之间互相唤醒，造成额外的电量消耗.</p>
-<p>目前已经对同系应用引起了问题，比如淘宝支付宝不能同时安装，百度系应用也一样<br>主要是由于sdk引起的</p>
-<p>fork进程相关的修改：<br>关于fork方式复制进程，然后在fork后的进程中做操作的事情已经做了限制，比如常见的应用卸载后打开浏览器统计卸载页面，已经无法实现，包括之前的一些基于fork实现的守护进程，service自启动等等，目前也无法实现. fork进程可以成功，但是成为孤儿进程后无法进行操作<br>应该也是google为了生态系统做的优化：大概的限制无非从两方面做，一是即时调用waitpid对孤儿进程进行回收 二是对于fork之后的子进程，在成为孤儿进程时直接添加标记，检测到这种标记时，该进程便无法获取权限进行操作数据,然后调用waitPid对其进行回收</p>
-<p>目前得到证明为: 现在系统会把fork出来的进程统一放到一个进程组里，在主线程挂掉的情况下，会把整个process group给干掉,因此无法以fork的方式实现守护进程</p>
-<p>Scheduling jobs:<br>新api,针对于之前的Alarmmanager实现的操作进行优化<br>之前很多操作会使用alarm来基于时间定时调度，往往会增加消耗，但有些操作其实可以集中在一个时间点来进行，比如上传日志，可以选择手机锁屏时进行，从而不会影响用户的使用.</p>
-<p>但是，目前只能在android 5.0上使用，仍然是硬伤</p>
-<p>Android5.0可以进行网络选择？<br>这个是指app可以自主选择连接的网路，比如用户数据连接和wifi同时启用，尽量让用户选择一个最优的网络来连接该app,以拥有更好的用户体验并节省流量.</p>
-<p>Notification的改动？<br>可以设置优先级，并在锁屏页面展示,android 5.0之前需要自己申请额外权限(device admin或者锁屏),自定义锁屏界面，关于Notification详情,android 4.4开始可以获取,之前实现需要开启辅助服务（AccessbilityService android 2.2就够了）</p>
-<p>关于BindService的改动?<br>现在启动一个bindService需要显式启动，不再支持隐式启动，否则会抛出 java.lang.IllegalArgumentException: Service Intent must   be explicit: Intent { act=com.duk3r.eortologio2.MyService }  </p>
-<p>现在android系统处于安全起见,要求显式启动bindService,而不是声明intent-filter</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2016/02/26/Android 5.0分析/" data-id="cil3r27lt00002sp5luxe8win" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
     <article id="post-Android-Manifest-Merge-Rules" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2016/02/26/Android-Manifest-Merge-Rules/" class="article-date">
@@ -203,10 +128,6 @@
     <h3 class="widget-title">最新文章</h3>
     <div class="widget">
       <ul>
-        
-          <li>
-            <a href="/2016/02/26/Android 5.0分析/">(no title)</a>
-          </li>
         
           <li>
             <a href="/2016/02/26/Android-Manifest-Merge-Rules/">Android Manifest Merge Rules</a>
