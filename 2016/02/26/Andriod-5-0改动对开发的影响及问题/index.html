@@ -156,8 +156,8 @@
 
         <section class="post-content">
             <p>首先看一下在Android 5.0上的一些详细改动</p>
-<p>1.设置targetSdkVersion为21 必须设置吗？是的，之前没设置会出现闪退的情况</p>
 <ol>
+<li>设置targetSdkVersion为21 必须设置吗？是的，之前没设置会出现闪退的情况</li>
 <li>如果想兼容以前的版本的话，只能通过API Level来进行判断， minSdkVersion这个属性不起作用</li>
 <li>关注一下JNI，用工具自动生成的不标准的代码，ART不支持压缩垃圾回收；这些可能兼容性有问题。</li>
 <li>Notification有些改变，包括风格、颜色、声音、震动，现在可以设置优先级，可以把它放到锁屏上面，多媒体回放，可以在当前应用弹出警告框。</li>
@@ -180,19 +180,24 @@
 <li>获取手机的应用信息（包括：应用最后使用时间，应用在前台的使用时长等）。</li>
 <li>输入语言的切换</li>
 <li>pdf转换成bitmap</li>
-<li>Divice owner的使用<br>25.输入语言的切换<br>26.添加了一个Scheduling jobs，可以自己定义开始时间，比如设备在充电的时候，或者空闲的时候等。<br>27.蓝牙和NFC的改善。<br>28.Document显示<br>29.evice admin加入了workspace的控制</li>
+<li>Divice owner的使用</li>
+<li>输入语言的切换</li>
+<li>添加了一个Scheduling jobs，可以自己定义开始时间，比如设备在充电的时候，或者空闲的时候等。</li>
+<li>蓝牙和NFC的改善。</li>
+<li>Document显示</li>
+<li>evice admin加入了workspace的控制</li>
 </ol>
 <p>以上只是看文档，并没有深入的去实践。</p>
 <p>对应用产生的影响：</p>
 <p>1.自定义权限的修改:<br>在Android L上，对于自定义权限有了新的限定，如果是不同应用声明定义了相同的自定义权限,那么就需要使用相同的签名，否则无法安装或者安装时需要进行删除应用间关联。<br>这应该是google为了防止应用之间互相唤醒，造成额外的电量消耗.</p>
 <p>目前已经对同系应用引起了问题，比如淘宝支付宝不能同时安装，百度系应用也一样<br>主要是由于sdk中定义的自定义权限引起的</p>
-<p>Fork进程相关的修改(之前应用卸载反馈以及守护进程均采用此方式)：<br>关于fork方式复制进程，然后在fork后的进程中做操作的事情已经做了限制，比如常见的应用卸载后打开浏览器统计卸载页面，已经无法实现，包括之前的一些基于fork实现的守护进程，service自启动等等，目前也无法实现. fork进程可以成功，但是成为孤儿进程后无法进行操作<br>应该也是google为了生态系统做的优化：大概的限制无非从两方面做，一是即时调用waitpid对孤儿进程进行回收 二是对于fork之后的子进程，在成为孤儿进程时直接添加标记，检测到这种标记时，该进程便无法获取权限进行操作数据,然后调用waitPid对其进行回收</p>
+<p>2.Fork进程相关的修改(之前应用卸载反馈以及守护进程均采用此方式)：<br>关于fork方式复制进程，然后在fork后的进程中做操作的事情已经做了限制，比如常见的应用卸载后打开浏览器统计卸载页面，已经无法实现，包括之前的一些基于fork实现的守护进程，service自启动等等，目前也无法实现. fork进程可以成功，但是成为孤儿进程后无法进行操作<br>应该也是google为了生态系统做的优化：大概的限制无非从两方面做，一是即时调用waitpid对孤儿进程进行回收 二是对于fork之后的子进程，在成为孤儿进程时直接添加标记，检测到这种标记时，该进程便无法获取权限进行操作数据,然后调用waitPid对其进行回收</p>
 <p>经查看源码，是系统会把fork的进程和主进程放到同一个进程组(Process Group)中。如果主进程挂掉后，会将整个进程组杀掉，导致该方式无法成功,已经从系统层面禁止该种方式<br>经检测，各大卫士及应用市场的卸载反馈同样无法在Android 5.0上生效，待研究是否有其他方式实现.</p>
-<p>Scheduling jobs:<br>新api,针对于之前的Alarmmanager实现的操作进行优化<br>之前很多操作会使用alarm来基于时间定时调度，往往会增加消耗，但有些操作其实可以集中在一个时间点来进行，比如上传日志，可以选择手机锁屏时进行，从而不会影响用户的使用.</p>
+<p>3.Scheduling jobs:<br>新api,针对于之前的Alarmmanager实现的操作进行优化<br>之前很多操作会使用alarm来基于时间定时调度，往往会增加消耗，但有些操作其实可以集中在一个时间点来进行，比如上传日志，可以选择手机锁屏时进行，从而不会影响用户的使用.</p>
 <p>但是，目前只能在android 5.0上使用，仍然是硬伤(虽然已经有一些开源的兼容库，但目前的兼容性看来，无法保证，尤其是国内厂商进行了这么多的修改)</p>
-<p>Android5.0可以进行网络选择？<br>这个是指app可以自主选择连接的网路，比如用户数据连接和wifi同时启用，尽量让用户选择一个最优的网络来连接该app,以拥有更好的用户体验并节省流量.</p>
-<p>Notification的改动？<br>可以设置优先级，并在锁屏页面展示,android 5.0之前需要自己申请额外权限(device admin或者锁屏),自定义锁屏界面，关于Notification详情,android 4.4开始可以获取,之前实现需要开启辅助服务（AccessbilityService android 2.2就够了）</p>
-<p>关于BindService的改动?<br>现在启动一个bindService需要显式启动，不再支持隐式启动，否则会抛出 java.lang.IllegalArgumentException: Service Intent must   be explicit: Intent { act=com.duk3r.eortologio2.MyService }  </p>
+<p>4.Android5.0可以进行网络选择？<br>这个是指app可以自主选择连接的网路，比如用户数据连接和wifi同时启用，尽量让用户选择一个最优的网络来连接该app,以拥有更好的用户体验并节省流量.</p>
+<p>5.Notification的改动？<br>可以设置优先级，并在锁屏页面展示,android 5.0之前需要自己申请额外权限(device admin或者锁屏),自定义锁屏界面，关于Notification详情,android 4.4开始可以获取,之前实现需要开启辅助服务（AccessbilityService android 2.2就够了）</p>
+<p>6.关于BindService的改动?<br>现在启动一个bindService需要显式启动，不再支持隐式启动，否则会抛出 java.lang.IllegalArgumentException: Service Intent must   be explicit: Intent { act=com.duk3r.eortologio2.MyService }  </p>
 <p>现在android系统处于安全起见,要求显式启动bindService,而不是声明intent-filter</p>
 
         </section>
